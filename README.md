@@ -1,5 +1,3 @@
-# Important, to correctly see the graphs and the map of this notebook, click on this link : https://nbviewer.jupyter.org/github/agpmilli/network-tour-so/blob/master/StackOverflow.ipynb
-# EE-558 - Network tour of Data Science 
 ## Project: Stack Overflow survey network analysis
 
 ### Authors
@@ -57,3 +55,4 @@ to recruiters. To do so, we would simply check
 which existing node is the closest to the artificial one that we create
 for the chosen features a recruiter is looking for.
 
+Important, to correctly see the graphs and the map of this notebook, click on this link : https://nbviewer.jupyter.org/github/agpmilli/network-tour-so/blob/master/StackOverflow.ipynb
