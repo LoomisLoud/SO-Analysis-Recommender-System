@@ -1,5 +1,10 @@
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import pandas as pd
+from sklearn.neighbors import kneighbors_graph
+import networkx as nx
+import numpy as np
+from sklearn import preprocessing
 
 # Function to do some comparison between professionals and students
 def plot_stud_prof(prof_stack="", stud_stack="", prof="", stud="", column="", title=""):
@@ -38,6 +43,89 @@ def row_filter(stack, row):
         if row.isnull().ExpectedSalary or row.ExpectedSalary < stack.ExpectedSalary.quantile(0.05):
             return False
     return True
+
+#Dummies the dataframe
+def dummies(df, columns, special_col):
+        
+    for sub in columns:
+        df[sub] = df[sub].apply(lambda x: str(x).replace(" ", "").split(";"))
+        if sub == special_col:
+            df[sub] = df[sub].apply(lambda x: ["Want_" + s for s in x])
+        df = pd.concat([df, pd.get_dummies(pd.DataFrame(df[sub].tolist(), index=df.index).stack()).sum(level=0)], axis=1).drop(sub, axis=1)
+    df = pd.get_dummies(df)
+    return df
+
+#Preprocess dataframe (dummies and nan)
+def preprocessed(df, columns, special_col, prof):
+    df = df.dropna()
+    final_df = dummies(df.copy(), columns, special_col)
+    if prof:
+        final_df.JobSatisfaction /= 10
+        final_df.CareerSatisfaction /= 10
+    return final_df, df
+
+#Compute knn graph using sklearn
+def compute_knn_graph(df):
+    graph = kneighbors_graph(df, int(np.sqrt(df.shape[0])), mode='distance', include_self=True)
+    graph.data = np.exp(- graph.data ** 2 / (2. * np.mean(graph.data) ** 2))
+    return graph
+             
+#Draw corresponding graph using networkX
+def draw_graph(graph, title):
+    G = nx.from_scipy_sparse_matrix(graph,edge_attribute='similarity')
+    pos = nx.spring_layout(G)
+    nx.draw_networkx_nodes(G, pos, node_size=7, node_color='lightblue')
+    plt.title(title)
+    plt.show()
+    return G, pos
+
+#Encode string label to int
+def encode_label(df, features):
+
+    mapping_prof = []
+    df_encode = df.copy()
+    for c in features:
+        le = preprocessing.LabelEncoder()
+        le.fit(df_encode[c])
+        df_encode[c] = le.transform(df_encode[c])
+        le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+    
+        mapping_prof.append(le_name_mapping)
+        
+    return mapping_prof, df_encode
+
+#Plot graph by features
+def draw_features(important_features, df, mapping, G, pos, type_):
+    for i,features in enumerate(important_features):
+        #print(features)
+        f = plt.figure(1,figsize=(10,10))
+        norm = plt.Normalize()
+        cmap = plt.get_cmap('Set2')
+        c = cmap(norm(list(df[features])))
+        if i in [0,2]:
+            scalarMap = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+        
+            ax = f.add_subplot(1,1,1)
+   
+            for label in mapping[i]:
+                ax.plot([0],[0],color=scalarMap.to_rgba(mapping[i][label]),label=label)
+    
+        nx.draw_networkx_nodes(G, pos, node_color=c, node_size=20)
+        plt.legend()
+        plt.title(features + " coloring for " + type_ + " network")
+        plt.show()
+        
+#Draw the neighbors of a certain node
+def draw_neighbors(G, pos, node, title):
+    color = ['lightblue'] * len(G.node)
+    color[node] = 'k'
+    for n in G.neighbors(node):
+        if n != node:
+            color[n] = 'r'
+    nx.draw_networkx_nodes(G, pos, node_color=color, node_size=20)
+    plt.title(title)
+    plt.show()
 
 MAP_COUNTRIES = {'Afghanistan':'AFG',
 'Aland Islands':'ALA','Albania':'ALB','Algeria':'DZA','American Samoa':'ASM','Andorra':'AND','Angola':'AGO','Anguilla':'AIA','Antigua and Barbuda':'ATG',
