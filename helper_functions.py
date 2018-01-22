@@ -74,6 +74,7 @@ def compute_knn_graph(df):
 def draw_graph(graph, title):
     G = nx.from_scipy_sparse_matrix(graph,edge_attribute='similarity')
     pos = nx.spring_layout(G)
+    plt.figure(1,figsize=(10,10))
     nx.draw_networkx_nodes(G, pos, node_size=7, node_color='lightblue')
     plt.title(title)
     plt.show()
@@ -104,10 +105,7 @@ def draw_features(important_features, df, mapping, G, pos, type_):
         c = cmap(norm(list(df[features])))
         if i in [0,2]:
             scalarMap = cm.ScalarMappable(norm=norm, cmap=cmap)
-
-        
             ax = f.add_subplot(1,1,1)
-   
             for label in mapping[i]:
                 ax.plot([0],[0],color=scalarMap.to_rgba(mapping[i][label]),label=label)
     
@@ -123,6 +121,7 @@ def draw_neighbors(G, pos, node, title):
     for n in G.neighbors(node):
         if n != node:
             color[n] = 'r'
+    plt.figure(1,figsize=(10,10))
     nx.draw_networkx_nodes(G, pos, node_color=color, node_size=20)
     plt.title(title)
     plt.show()
